@@ -38,7 +38,7 @@ st.markdown("""
         font-size: 18px;
         color: #6b7280;
         text-align: center;
-        margin-bottom: 40px;
+        margin-bottom: 20px;
     }
 
     .box {
@@ -58,6 +58,19 @@ st.markdown("""
         border-radius: 10px;
         padding: 12px;
         border: none;
+        transition: 0.3s ease;
+    }
+
+    .stButton > button:hover {
+        background-color: #1d4ed8;
+        color: white;
+        border: none;
+    }
+
+    .stButton > button:focus {
+        color: white;
+        border: none;
+        box-shadow: none;
     }
 
     .stDownloadButton > button {
@@ -69,6 +82,19 @@ st.markdown("""
         border-radius: 10px;
         padding: 12px;
         border: none;
+        transition: 0.3s ease;
+    }
+
+    .stDownloadButton > button:hover {
+        background-color: #15803d;
+        color: white;
+        border: none;
+    }
+
+    .stDownloadButton > button:focus {
+        color: white;
+        border: none;
+        box-shadow: none;
     }
 
     </style>
@@ -90,6 +116,27 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# -----------------------------
+# LANGUAGE SUPPORT
+# -----------------------------
+st.markdown(
+    """
+    <div style="
+        text-align:center;
+        margin-bottom:25px;
+        font-size:16px;
+        color:#374151;
+        font-weight:500;
+    ">
+        🌐 Supported OCR Languages:
+        🇮🇳 Marathi &nbsp;&nbsp;|&nbsp;&nbsp;
+        🇮🇳 Hindi &nbsp;&nbsp;|&nbsp;&nbsp;
+        🇬🇧 English
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # -----------------------------
 # MAIN CONTAINER
@@ -106,7 +153,7 @@ with st.container():
 
     # FILE NAME INPUT
     output_filename = st.text_input(
-        "Enter Excel File Name",
+        "Enter the name you want for the Excel file",
         value="voter_data"
     )
 
@@ -117,7 +164,7 @@ with st.container():
 
         if st.button("🚀 Process PDF"):
 
-            # SAFE FILENAME
+            # SAFE FILE NAME
             safe_filename = "".join(
                 c for c in output_filename
                 if c.isalnum() or c in (" ", "_", "-")
@@ -129,7 +176,7 @@ with st.container():
             # PROGRESS BAR
             progress_bar = st.progress(0)
 
-            # STATUS
+            # STATUS TEXT
             status_text = st.empty()
 
             # SAVE TEMP PDF
@@ -172,14 +219,14 @@ with st.container():
                         f"{len(df)} records extracted."
                     )
 
-                    # DATAFRAME
+                    # SHOW DATAFRAME
                     st.dataframe(
                         df,
                         use_container_width=True,
                         height=500
                     )
 
-                    # TEMP EXCEL
+                    # CREATE TEMP EXCEL FILE
                     with tempfile.NamedTemporaryFile(
                         delete=False,
                         suffix=".xlsx"
@@ -193,7 +240,7 @@ with st.container():
                         index=False
                     )
 
-                    # DOWNLOAD
+                    # DOWNLOAD BUTTON
                     with open(excel_path, "rb") as file:
 
                         st.download_button(
@@ -207,7 +254,7 @@ with st.container():
                             )
                         )
 
-                    # DELETE EXCEL
+                    # DELETE EXCEL FILE
                     os.remove(excel_path)
 
             except Exception as e:
