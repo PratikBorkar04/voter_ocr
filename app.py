@@ -128,8 +128,8 @@ st.markdown(
         color:#374151;
         font-weight:500;
     ">
-        🌐 Supported OCR Languages:
-        🇮🇳 Marathi &nbsp;&nbsp;|&nbsp;&nbsp;
+        🌐 Supported OCR Languages : 
+         🇮🇳 Marathi &nbsp;&nbsp;|&nbsp;&nbsp;
         🇮🇳 Hindi &nbsp;&nbsp;|&nbsp;&nbsp;
         🇬🇧 English
     </div>
