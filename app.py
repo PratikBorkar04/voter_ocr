@@ -131,7 +131,7 @@ st.markdown(
         🌐 Supported OCR Languages : 
          🇮🇳 Marathi &nbsp;&nbsp;|&nbsp;&nbsp;
         🇮🇳 Hindi &nbsp;&nbsp;|&nbsp;&nbsp;
-        🇬🇧 English
+        🇮🇳 English
     </div>
     """,
     unsafe_allow_html=True
