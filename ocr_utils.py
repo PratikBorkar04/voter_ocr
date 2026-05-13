@@ -5,6 +5,7 @@ from pdf2image import convert_from_path, pdfinfo_from_path
 import pandas as pd
 import re
 import gc
+import time
 
 
 # -----------------------------
@@ -27,8 +28,10 @@ def detect_language(text):
 # CLEAN TEXT
 # -----------------------------
 def clean_text(val):
+
     if val:
         return val.replace('\n', ' ').strip()
+
     return None
 
 
@@ -59,9 +62,9 @@ def extract_voter_id(img_roi):
     h, w = img_roi.shape[:2]
 
     regions = [
-        img_roi[int(h*0.02):int(h*0.25), int(w*0.02):int(w*0.45)],
-        img_roi[int(h*0.02):int(h*0.25), int(w*0.45):int(w*0.98)],
-        img_roi[int(h*0.20):int(h*0.40), int(w*0.02):int(w*0.60)]
+        img_roi[int(h * 0.02):int(h * 0.25), int(w * 0.02):int(w * 0.45)],
+        img_roi[int(h * 0.02):int(h * 0.25), int(w * 0.45):int(w * 0.98)],
+        img_roi[int(h * 0.20):int(h * 0.40), int(w * 0.02):int(w * 0.60)]
     ]
 
     for region in regions:
@@ -244,14 +247,36 @@ def parse_body_data(text):
 # -----------------------------
 # PROCESS PDF
 # -----------------------------
-def process_pdf(pdf_path):
+def process_pdf(
+    pdf_path,
+    progress_bar=None,
+    status_text=None
+):
 
     all_data = []
 
     info = pdfinfo_from_path(pdf_path)
+
     total_pages = info["Pages"]
 
     for page in range(1, total_pages + 1):
+
+        # -----------------------------
+        # PROGRESS UPDATE
+        # -----------------------------
+        if progress_bar:
+
+            progress = int((page / total_pages) * 100)
+
+            progress_bar.progress(progress)
+
+            time.sleep(0.1)
+
+        if status_text:
+
+            status_text.text(
+                f"Processing page {page} of {total_pages}..."
+            )
 
         try:
 
@@ -314,25 +339,32 @@ def process_pdf(pdf_path):
 
                     roi = gray[y:y+h, x:x+w]
 
+                    # EXTRACT VOTER ID
                     voter_id = extract_voter_id(roi)
 
+                    # OCR FULL TEXT
                     full_text = pytesseract.image_to_string(
                         roi,
                         config='--psm 6',
                         lang='eng+mar+hin'
                     )
 
+                    # SKIP DELETED
                     if "DELETED" in full_text.upper():
                         continue
 
+                    # PARSE DATA
                     data = parse_body_data(full_text)
 
                     data["Voter ID"] = voter_id
 
+                    # SAVE VALID RECORDS
                     if data["Name"] or data["Voter ID"]:
                         all_data.append(data)
 
+            # -----------------------------
             # MEMORY CLEANUP
+            # -----------------------------
             del images
             del img
             del img_cv
@@ -342,8 +374,12 @@ def process_pdf(pdf_path):
             gc.collect()
 
         except Exception as e:
+
             print(f"Error processing page {page}: {e}")
 
+    # -----------------------------
+    # CREATE DATAFRAME
+    # -----------------------------
     df = pd.DataFrame(all_data)
 
     return df
