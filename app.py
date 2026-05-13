@@ -44,90 +44,91 @@ if uploaded_file is not None:
 
     if st.button("Process PDF"):
 
+        # INFO MESSAGE
+        st.info("Processing PDF... Please wait.")
+
         # PROGRESS BAR
         progress_bar = st.progress(0)
 
         # STATUS TEXT
         status_text = st.empty()
 
-        with st.spinner("Processing PDF... Please wait."):
+        # SAVE TEMP PDF
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".pdf"
+        ) as tmp_file:
 
-            # SAVE TEMP PDF
-            with tempfile.NamedTemporaryFile(
-                delete=False,
-                suffix=".pdf"
-            ) as tmp_file:
+            tmp_file.write(uploaded_file.read())
 
-                tmp_file.write(uploaded_file.read())
+            temp_pdf_path = tmp_file.name
 
-                temp_pdf_path = tmp_file.name
+        try:
 
-            try:
+            # OCR PROCESS
+            df = process_pdf(
+                temp_pdf_path,
+                progress_bar,
+                status_text
+            )
 
-                # OCR PROCESS
-                df = process_pdf(
-                    temp_pdf_path,
-                    progress_bar,
-                    status_text
+            # COMPLETE PROGRESS
+            progress_bar.progress(100)
+
+            status_text.text(
+                "Processing completed."
+            )
+
+            if df.empty:
+
+                st.warning(
+                    "No voter data found."
                 )
 
-                # COMPLETE PROGRESS
-                progress_bar.progress(100)
+            else:
 
-                status_text.text(
-                    "Processing completed."
+                st.success(
+                    f"Extraction completed. "
+                    f"{len(df)} records found."
                 )
 
-                if df.empty:
+                # SHOW DATAFRAME
+                st.dataframe(df)
 
-                    st.warning(
-                        "No voter data found."
-                    )
+                # CREATE EXCEL FILE
+                excel_path = tempfile.NamedTemporaryFile(
+                    delete=False,
+                    suffix=".xlsx"
+                ).name
 
-                else:
+                df.to_excel(
+                    excel_path,
+                    index=False
+                )
 
-                    st.success(
-                        f"Extraction completed. "
-                        f"{len(df)} records found."
-                    )
+                # DOWNLOAD BUTTON
+                with open(excel_path, "rb") as file:
 
-                    # SHOW DATAFRAME
-                    st.dataframe(df)
-
-                    # CREATE EXCEL FILE
-                    excel_path = tempfile.NamedTemporaryFile(
-                        delete=False,
-                        suffix=".xlsx"
-                    ).name
-
-                    df.to_excel(
-                        excel_path,
-                        index=False
-                    )
-
-                    # DOWNLOAD BUTTON
-                    with open(excel_path, "rb") as file:
-
-                        st.download_button(
-                            label="⬇ Download Excel File",
-                            data=file,
-                            file_name="voter_data.xlsx",
-                            mime=(
-                                "application/"
-                                "vnd.openxmlformats-officedocument."
-                                "spreadsheetml.sheet"
-                            )
+                    st.download_button(
+                        label="⬇ Download Excel File",
+                        data=file,
+                        file_name="voter_data.xlsx",
+                        mime=(
+                            "application/"
+                            "vnd.openxmlformats-officedocument."
+                            "spreadsheetml.sheet"
                         )
+                    )
 
-                    # DELETE EXCEL FILE
-                    os.remove(excel_path)
+                # DELETE EXCEL FILE
+                os.remove(excel_path)
 
-            except Exception as e:
+        except Exception as e:
 
-                st.error(f"Error: {e}")
+            st.error(f"Error: {e}")
 
-            finally:
+        finally:
 
-                # DELETE TEMP PDF
-                if os.path.exists(temp_pdf_path):
-                    os.remove(temp_pdf_path)
+            # DELETE TEMP PDF
+            if os.path.exists(temp_pdf_path):
+                os.remove(temp_pdf_path)
