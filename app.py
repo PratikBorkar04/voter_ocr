@@ -44,7 +44,7 @@ if uploaded_file is not None:
 
     if st.button("Process PDF"):
 
-        # INFO MESSAGE
+        # PROCESS INFO
         st.info("Processing PDF... Please wait.")
 
         # PROGRESS BAR
@@ -79,6 +79,7 @@ if uploaded_file is not None:
                 "Processing completed."
             )
 
+            # CHECK DATA
             if df.empty:
 
                 st.warning(
@@ -88,19 +89,25 @@ if uploaded_file is not None:
             else:
 
                 st.success(
-                    f"Extraction completed. "
-                    f"{len(df)} records found."
+                    f"Extraction completed successfully. "
+                    f"{len(df)} records extracted."
                 )
 
-                # SHOW DATAFRAME
-                st.dataframe(df)
+                # SHOW TABLE
+                st.dataframe(
+                    df,
+                    use_container_width=True
+                )
 
-                # CREATE EXCEL FILE
-                excel_path = tempfile.NamedTemporaryFile(
+                # CREATE TEMP EXCEL FILE
+                with tempfile.NamedTemporaryFile(
                     delete=False,
                     suffix=".xlsx"
-                ).name
+                ) as excel_file:
 
+                    excel_path = excel_file.name
+
+                # SAVE EXCEL
                 df.to_excel(
                     excel_path,
                     index=False
