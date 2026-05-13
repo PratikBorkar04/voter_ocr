@@ -12,130 +12,212 @@ from ocr_utils import process_pdf
 st.set_page_config(
     page_title="Voter OCR Extractor",
     page_icon="📄",
-    layout="centered"
+    layout="wide"
 )
 
 
 # -----------------------------
-# TITLE
+# CUSTOM CSS
 # -----------------------------
-st.title("📄 Voter OCR Extractor")
+st.markdown("""
+    <style>
 
-st.write(
-    "Upload voter PDF and extract data into Excel format."
+    .main {
+        background-color: #f5f7fa;
+    }
+
+    .title {
+        font-size: 42px;
+        font-weight: 700;
+        color: #1f2937;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .subtitle {
+        font-size: 18px;
+        color: #6b7280;
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .box {
+        background-color: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+    }
+
+    .stButton > button {
+        width: 100%;
+        background-color: #2563eb;
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 12px;
+        border: none;
+    }
+
+    .stDownloadButton > button {
+        width: 100%;
+        background-color: #16a34a;
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 12px;
+        border: none;
+    }
+
+    </style>
+""", unsafe_allow_html=True)
+
+
+# -----------------------------
+# HEADER
+# -----------------------------
+st.markdown(
+    '<div class="title">📄 Voter OCR Extractor</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="subtitle">'
+    'Upload voter list PDFs and convert them into Excel files instantly.'
+    '</div>',
+    unsafe_allow_html=True
 )
 
 
 # -----------------------------
-# FILE UPLOAD
+# MAIN CONTAINER
 # -----------------------------
-uploaded_file = st.file_uploader(
-    "Upload PDF File",
-    type=["pdf"]
-)
+with st.container():
 
+    st.markdown('<div class="box">', unsafe_allow_html=True)
 
-# -----------------------------
-# PROCESS BUTTON
-# -----------------------------
-if uploaded_file is not None:
+    # FILE UPLOAD
+    uploaded_file = st.file_uploader(
+        "Upload PDF File",
+        type=["pdf"]
+    )
 
-    st.success("PDF uploaded successfully.")
+    # FILE NAME INPUT
+    output_filename = st.text_input(
+        "Enter Excel File Name",
+        value="voter_data"
+    )
 
-    if st.button("Process PDF"):
+    # PROCESS BUTTON
+    if uploaded_file is not None:
 
-        # PROCESS INFO
-        st.info("Processing PDF... Please wait.")
+        st.success("PDF uploaded successfully.")
 
-        # PROGRESS BAR
-        progress_bar = st.progress(0)
+        if st.button("🚀 Process PDF"):
 
-        # STATUS TEXT
-        status_text = st.empty()
+            # SAFE FILENAME
+            safe_filename = "".join(
+                c for c in output_filename
+                if c.isalnum() or c in (" ", "_", "-")
+            ).strip()
 
-        # SAVE TEMP PDF
-        with tempfile.NamedTemporaryFile(
-            delete=False,
-            suffix=".pdf"
-        ) as tmp_file:
+            # INFO
+            st.info("Processing PDF... Please wait.")
 
-            tmp_file.write(uploaded_file.read())
+            # PROGRESS BAR
+            progress_bar = st.progress(0)
 
-            temp_pdf_path = tmp_file.name
+            # STATUS
+            status_text = st.empty()
 
-        try:
+            # SAVE TEMP PDF
+            with tempfile.NamedTemporaryFile(
+                delete=False,
+                suffix=".pdf"
+            ) as tmp_file:
 
-            # OCR PROCESS
-            df = process_pdf(
-                temp_pdf_path,
-                progress_bar,
-                status_text
-            )
+                tmp_file.write(uploaded_file.read())
 
-            # COMPLETE PROGRESS
-            progress_bar.progress(100)
+                temp_pdf_path = tmp_file.name
 
-            status_text.text(
-                "Processing completed."
-            )
+            try:
 
-            # CHECK DATA
-            if df.empty:
-
-                st.warning(
-                    "No voter data found."
+                # OCR PROCESS
+                df = process_pdf(
+                    temp_pdf_path,
+                    progress_bar,
+                    status_text
                 )
 
-            else:
+                # COMPLETE PROGRESS
+                progress_bar.progress(100)
 
-                st.success(
-                    f"Extraction completed successfully. "
-                    f"{len(df)} records extracted."
+                status_text.text(
+                    "Processing completed."
                 )
 
-                # SHOW TABLE
-                st.dataframe(
-                    df,
-                    use_container_width=True
-                )
+                # EMPTY CHECK
+                if df.empty:
 
-                # CREATE TEMP EXCEL FILE
-                with tempfile.NamedTemporaryFile(
-                    delete=False,
-                    suffix=".xlsx"
-                ) as excel_file:
-
-                    excel_path = excel_file.name
-
-                # SAVE EXCEL
-                df.to_excel(
-                    excel_path,
-                    index=False
-                )
-
-                # DOWNLOAD BUTTON
-                with open(excel_path, "rb") as file:
-
-                    st.download_button(
-                        label="⬇ Download Excel File",
-                        data=file,
-                        file_name="voter_data.xlsx",
-                        mime=(
-                            "application/"
-                            "vnd.openxmlformats-officedocument."
-                            "spreadsheetml.sheet"
-                        )
+                    st.warning(
+                        "No voter data found."
                     )
 
-                # DELETE EXCEL FILE
-                os.remove(excel_path)
+                else:
 
-        except Exception as e:
+                    st.success(
+                        f"✅ Extraction completed successfully. "
+                        f"{len(df)} records extracted."
+                    )
 
-            st.error(f"Error: {e}")
+                    # DATAFRAME
+                    st.dataframe(
+                        df,
+                        use_container_width=True,
+                        height=500
+                    )
 
-        finally:
+                    # TEMP EXCEL
+                    with tempfile.NamedTemporaryFile(
+                        delete=False,
+                        suffix=".xlsx"
+                    ) as excel_file:
 
-            # DELETE TEMP PDF
-            if os.path.exists(temp_pdf_path):
-                os.remove(temp_pdf_path)
+                        excel_path = excel_file.name
+
+                    # SAVE EXCEL
+                    df.to_excel(
+                        excel_path,
+                        index=False
+                    )
+
+                    # DOWNLOAD
+                    with open(excel_path, "rb") as file:
+
+                        st.download_button(
+                            label="⬇ Download Excel File",
+                            data=file,
+                            file_name=f"{safe_filename}.xlsx",
+                            mime=(
+                                "application/"
+                                "vnd.openxmlformats-officedocument."
+                                "spreadsheetml.sheet"
+                            )
+                        )
+
+                    # DELETE EXCEL
+                    os.remove(excel_path)
+
+            except Exception as e:
+
+                st.error(f"Error: {e}")
+
+            finally:
+
+                # DELETE TEMP PDF
+                if os.path.exists(temp_pdf_path):
+                    os.remove(temp_pdf_path)
+
+    st.markdown('</div>', unsafe_allow_html=True)
