@@ -44,6 +44,12 @@ if uploaded_file is not None:
 
     if st.button("Process PDF"):
 
+        # PROGRESS BAR
+        progress_bar = st.progress(0)
+
+        # STATUS TEXT
+        status_text = st.empty()
+
         with st.spinner("Processing PDF... Please wait."):
 
             # SAVE TEMP PDF
@@ -59,11 +65,24 @@ if uploaded_file is not None:
             try:
 
                 # OCR PROCESS
-                df = process_pdf(temp_pdf_path)
+                df = process_pdf(
+                    temp_pdf_path,
+                    progress_bar,
+                    status_text
+                )
+
+                # COMPLETE PROGRESS
+                progress_bar.progress(100)
+
+                status_text.text(
+                    "Processing completed."
+                )
 
                 if df.empty:
 
-                    st.warning("No voter data found.")
+                    st.warning(
+                        "No voter data found."
+                    )
 
                 else:
 
